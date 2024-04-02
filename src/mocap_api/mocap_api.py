@@ -5,9 +5,9 @@ import time
 import os
 
 MocapApi = cdll.LoadLibrary(os.path.join(os.path.dirname(__file__), {
-    'Windows' : '../mocap_api/MocapApi.dll',
-    'Linux' : '',
-    'DarWin' : '' # macOS
+    'Windows': '../mocap_api/MocapApi.dll',
+    'Linux': '',
+    'DarWin': ''  # macOS
 }[system()]))
 # MocapApi = cdll.LoadLibrary('../windows/MocapApi.dll')
 
@@ -101,12 +101,18 @@ MCPJointTag = namedtuple('EMCPJointTag', [
 ])._make([x for x in range(61)])
 
 MCPRigidBodyHandle = c_uint64
+
+
 class MCPRigidBody(object):
     IMCPRigidBodyApi_Version = c_char_p(b'PROC_TABLE:IMCPRigidBody_001')
+
     class MCPRigidBodyApi(Structure):
         _fields_ = [
-            ('GetRigidBodyRotation', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPRigidBodyHandle)),
-            ('GetRigidBodyPosition', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPRigidBodyHandle)),
+            ('GetRigidBodyRotation',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+                       MCPRigidBodyHandle)),
+            ('GetRigidBodyPosition',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPRigidBodyHandle)),
             ('GetRigidBodyStatus', CFUNCTYPE(c_int32, POINTER(c_int32), MCPRigidBodyHandle)),
             ('GetRigidBodyId', CFUNCTYPE(c_int32, POINTER(c_int32), MCPRigidBodyHandle))
         ]
@@ -153,14 +159,22 @@ class MCPRigidBody(object):
             raise RuntimeError('Can not get rigid body id: {0}'.format(err))
         return rigid_id.value
 
+
 MCPSensorModuleHandle = c_uint64
+
+
 class MCPSensorModule(object):
     IMCPSensorModuleApi_Version = c_char_p(b'PROC_TABLE:IMCPSensorModule_001')
+
     class MCPSensorModuleApi(Structure):
         _fields_ = [
-            ('GetSensorModulePosture', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPSensorModuleHandle)),
-            ('GetSensorModuleAngularVelocity', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPSensorModuleHandle)),
-            ('GetSensorModuleAcceleratedVelocity', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPSensorModuleHandle))
+            ('GetSensorModulePosture',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+                       MCPSensorModuleHandle)),
+            ('GetSensorModuleAngularVelocity',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPSensorModuleHandle)),
+            ('GetSensorModuleAcceleratedVelocity',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPSensorModuleHandle))
         ]
 
     api = POINTER(MCPSensorModuleApi)()
@@ -200,14 +214,22 @@ class MCPSensorModule(object):
             raise RuntimeError('Can not get sensor module accelerated velocity: {0}'.format(MCPError._fields[err]))
         return x.value, y.value, z.value
 
+
 MCPBodyPartHandle = c_uint64
+
+
 class MCPBodyPart(object):
     IMCPBodyPartApi_Version = c_char_p(b'PROC_TABLE:IMCPBodyPart_001')
+
     class MCPBodyPartApi(Structure):
         _fields_ = [
-            ('GetJointPosition', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPBodyPartHandle)),
-            ('GetJointDisplacementSpeed', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPBodyPartHandle)),
-            ('GetBodyPartPosture', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPBodyPartHandle))
+            ('GetJointPosition',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPBodyPartHandle)),
+            ('GetJointDisplacementSpeed',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPBodyPartHandle)),
+            ('GetBodyPartPosture',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+                       MCPBodyPartHandle))
         ]
 
     api = POINTER(MCPBodyPartApi)()
@@ -247,16 +269,25 @@ class MCPBodyPart(object):
             raise RuntimeError('Can not get body part posture: {0}'.format(MCPError._fields[err]))
         return w.value, x.value, y.value, z.value
 
+
 MCPJointHandle = c_uint64
+
+
 class MCPJoint(object):
     IMCPJointApi_Version = c_char_p(b"PROC_TABLE:IMCPJoint_003")
+
     class MCPJointApi(Structure):
         _fields_ = [
             ('GetJointName', CFUNCTYPE(c_int32, POINTER(c_char_p), MCPJointHandle)),
-            ('GetJointLocalRotation', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
-            ('GetJointLocalRotationByEuler', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
-            ('GetJointLocalTransformation', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
-            ('GetJointDefaultLocalTransformation', CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
+            ('GetJointLocalRotation',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+                       MCPJointHandle)),
+            ('GetJointLocalRotationByEuler',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
+            ('GetJointLocalTransformation',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
+            ('GetJointDefaultLocalTransformation',
+             CFUNCTYPE(c_int32, POINTER(c_float), POINTER(c_float), POINTER(c_float), MCPJointHandle)),
             ('GetJointChild', CFUNCTYPE(c_int32, POINTER(MCPJointHandle), POINTER(c_uint32), MCPJointHandle)),
             ('GetJointBodyPart', CFUNCTYPE(c_int32, POINTER(MCPBodyPartHandle), MCPJointHandle)),
             ('GetJointSensorModule', CFUNCTYPE(c_int32, POINTER(MCPSensorModuleHandle), MCPJointHandle)),
@@ -291,7 +322,7 @@ class MCPJoint(object):
         if err != MCPError.NoError:
             raise RuntimeError('Can not get joint local rotation: {0}'.format(MCPError._fields[err]))
         return w.value, x.value, y.value, z.value
-    
+
     def get_local_rotation_by_euler(self):
         r0 = c_float()
         r1 = c_float()
@@ -378,8 +409,11 @@ class MCPJoint(object):
 
 
 MCPAvatarHandle = c_uint64
+
+
 class MCPAvatar(object):
     IMCPAvatarApi_Version = c_char_p(b'PROC_TABLE:IMCPAvatar_003')
+
     class MCPAvatarApi(Structure):
         _fields_ = [
             ('GetAvatarIndex', CFUNCTYPE(c_int32, POINTER(c_uint32), MCPAvatarHandle)),
@@ -387,10 +421,13 @@ class MCPAvatar(object):
             ('GetAvatarJoints', CFUNCTYPE(c_int32, POINTER(MCPJointHandle), POINTER(c_uint32), MCPAvatarHandle)),
             ('GetAvatarJointByName', CFUNCTYPE(c_int32, c_char_p, POINTER(MCPJointHandle), MCPAvatarHandle)),
             ('GetAvatarName', CFUNCTYPE(c_int32, POINTER(c_char_p), MCPAvatarHandle)),
-            ('GetAvatarRigidBodies', CFUNCTYPE(c_int32, POINTER(MCPRigidBodyHandle), POINTER(c_uint32), MCPAvatarHandle)),
+            ('GetAvatarRigidBodies',
+             CFUNCTYPE(c_int32, POINTER(MCPRigidBodyHandle), POINTER(c_uint32), MCPAvatarHandle)),
             ('GetAvatarJointHierarchy', CFUNCTYPE(c_int32, POINTER(c_char_p))),
             ('GetAvatarPostureIndex', CFUNCTYPE(c_int32, POINTER(c_uint32), POINTER(MCPAvatarHandle))),
-            ('GetAvatarPostureTimeCode', CFUNCTYPE(c_int32, POINTER(c_uint32), POINTER(c_uint32), POINTER(c_uint32), POINTER(c_uint32), POINTER(MCPAvatarHandle))),
+            ('GetAvatarPostureTimeCode',
+             CFUNCTYPE(c_int32, POINTER(c_uint32), POINTER(c_uint32), POINTER(c_uint32), POINTER(c_uint32),
+                       POINTER(MCPAvatarHandle))),
         ]
 
     api = POINTER(MCPAvatarApi)()
@@ -444,7 +481,8 @@ class MCPAvatar(object):
 
     def get_rigid_bodies(self):
         rigid_body_count = c_uint32()
-        err = self.api.contents.GetAvatarRigidBodies(POINTER(MCPRigidBodyHandle)(), pointer(rigid_body_count), self.handle)
+        err = self.api.contents.GetAvatarRigidBodies(POINTER(MCPRigidBodyHandle)(), pointer(rigid_body_count),
+                                                     self.handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get avatar rigid bodies: {0}'.format(MCPError._fields[err]))
         rigid_body_handles = (MCPRigidBodyHandle * rigid_body_count.value)()
@@ -460,6 +498,7 @@ class MCPAvatar(object):
             raise RuntimeError('Can not get avatar joint hierarchy: {0}'.format(err))
         return str(hierarchy.value, encoding='utf8')
 
+
 class MCPEventDataReserved(Structure):
     _fields_ = [
         ('reserved0', c_uint64),
@@ -470,17 +509,19 @@ class MCPEventDataReserved(Structure):
         ('reserved5', c_uint64),
     ]
 
+
 class MCPEventData(Union):
     _fields_ = [
         ('reserved', MCPEventDataReserved),
         ('avatar_handle', MCPAvatarHandle),
         ('error', c_int32),
-        ('sensor_handle', MCPSensorModuleHandle) #######################
+        ('sensor_handle', MCPSensorModuleHandle)  #######################
     ]
 
+
 MCPEventType = namedtuple('EMCPEventType', [
-    'InvalidEvent', 
-    'AvatarUpdated', 
+    'InvalidEvent',
+    'AvatarUpdated',
     'RigidBodyUpdated',
     'Error',
     'SensorModulesUpdated',
@@ -489,6 +530,7 @@ MCPEventType = namedtuple('EMCPEventType', [
     'Notify'
 ])(0, 256, 512, 768, 1024, 1280, 1536, 1792)
 
+
 class MCPEvent(Structure):
     _fields_ = [
         ("size", c_uint32),
@@ -496,6 +538,7 @@ class MCPEvent(Structure):
         ('timestamp', c_double),
         ("event_data", MCPEventData)
     ]
+
 
 MCPBvhRotation = namedtuple('EMCPBvhRotation', [
     'XYZ',
@@ -519,8 +562,11 @@ MCPBvhDisplacement = namedtuple('EMCPBvhDisplacement', [
 ])(0, 1)
 
 MCPSettingsHandle = c_uint64
+
+
 class MCPSettings(object):
     IMCPSettingsApi_Version = c_char_p(b'PROC_TABLE:IMCPSettings_001')
+
     class MCPSettingsApi(Structure):
         _fields_ = [
             ('CreateSettings', CFUNCTYPE(c_int32, POINTER(MCPSettingsHandle))),
@@ -549,7 +595,7 @@ class MCPSettings(object):
             raise RuntimeError('Can not create settings: {0}'.format(MCPError._fields[err]))
 
     def __del__(self):
-    # def destroy(self):
+        # def destroy(self):
         err = self.api.contents.DestroySettings(self.handle)
         print('aaa')
         if err != MCPError.NoError:
@@ -559,7 +605,7 @@ class MCPSettings(object):
         err = self.api.contents.SetSettingsUDP(c_uint16(local_port), self.handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not set udp port of {0}: {1}'.format(local_port, MCPError._fields[err]))
-            
+
     def set_udp_server(self, ip, port):
         err = self.api.contents.SetSettingsUDPServer(c_char_p(bytes(ip, encoding='utf8')), c_uint16(port), self.handle)
         if err != MCPError.NoError:
@@ -625,8 +671,11 @@ MCPUnit = namedtuple('EMCPUnit', [
 ])(0, 1)
 
 MCPRenderSettingsHandle = c_uint64
+
+
 class MCPRenderSettings(object):
     IMCPRenderSettingsApi_Version = c_char_p(b'PROC_TABLE:IMCPRenderSettings_001')
+
     class MCPRenderSettingsApi(Structure):
         _fields_ = [
             ('CreateRenderSettings', CFUNCTYPE(c_int32, POINTER(MCPRenderSettingsHandle))),
@@ -646,7 +695,7 @@ class MCPRenderSettings(object):
 
     api = POINTER(MCPRenderSettingsApi)()
 
-    def __init__(self, pre_def = None):
+    def __init__(self, pre_def=None):
         if not self.api:
             err = MocapApi.MCPGetGenericInterface(self.IMCPRenderSettingsApi_Version, pointer(self.api))
             if err != MCPError.NoError:
@@ -710,7 +759,7 @@ class MCPRenderSettings(object):
         err = self.api.contents.SetRotatingDirection(c_int32(rotating_direction), self.handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not set rotating direction: {0}'.format(MCPError._fields[err]))
-    
+
     def get_rotating_direction(self):
         rotating_direction = c_int32()
         err = self.api.contents.GetRotatingDirection(pointer(rotating_direction), self.handle)
@@ -729,25 +778,29 @@ class MCPRenderSettings(object):
         if err != MCPError.NoError:
             raise RuntimeError('Can not get unit: {0}'.format(MCPError._fields[err]))
         return unit.value
-#CT 2.21.2023
+
+
+# CT 2.21.2023
 MCPCommands = namedtuple('EMCPCommand', [
-        'CommandStartCapture',
-        'CommandStopCapture',
-        'CommandZeroPosition',
-        'CommandCalibrateMotion',
-        'CommandStartRecored',
-        'CommandStopRecored',
-        'CommandResumeOriginalPosture',
+    'CommandStartCapture',
+    'CommandStopCapture',
+    'CommandZeroPosition',
+    'CommandCalibrateMotion',
+    'CommandStartRecored',
+    'CommandStopRecored',
+    'CommandResumeOriginalPosture',
 ])._make(range(7))
 
-
 MCPCommandStopCatpureExtraFlag = namedtuple('EMCPCommandStopCatpureExtraFlag', [
-        'StopCatpureExtraFlag_SensorsModulesPowerOff',
-        'StopCatpureExtraFlag_SensorsModulesHibernate',
+    'StopCatpureExtraFlag_SensorsModulesPowerOff',
+    'StopCatpureExtraFlag_SensorsModulesHibernate',
 ])(0, 1)
 MCPCommandHandle = c_uint64
+
+
 class MCPCommand(object):
     IMCPCommandApi_Version = c_char_p(b'PROC_TABLE:IMCPCommand_001')
+
     class MCPCommandApi(Structure):
         _fields_ = [
             ('CreateCommand', CFUNCTYPE(c_int32, c_uint32, POINTER(MCPCommandHandle))),
@@ -756,9 +809,9 @@ class MCPCommand(object):
             ('GetCommandResultCode', CFUNCTYPE(c_int32, POINTER(c_uint32), MCPCommandHandle)),
             ('DestroyCommand', CFUNCTYPE(c_int32, MCPCommandHandle)),
         ]
-    
+
     api = POINTER(MCPCommandApi)()
-    
+
     def __init__(self, cmd):
         if not self.api:
             err = MocapApi.MCPGetGenericInterface(self.IMCPCommandApi_Version, pointer(self.api))
@@ -770,6 +823,7 @@ class MCPCommand(object):
         if err != MCPError.NoError:
             raise RuntimeError('Can not CreateCommand: {0}'.format(MCPError._fields[err]))
         print(self.handle)
+
     def get_command_result_message(self):
         resMessage = c_char_p()
         err = self.api.contents.GetCommandResultMessage(pointer(resMessage), self.handle)
@@ -784,15 +838,19 @@ class MCPCommand(object):
         if err != MCPError.NoError:
             raise RuntimeError('Can not GetCommandResultCode: {0}'.format(MCPError._fields[err]))
         print(resCode)
+
     def destroy_command(self):
         err = self.api.contents.DestroyCommand(self.handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not GetCommandResultCode: {0}'.format(MCPError._fields[err]))
 
-    
+
 MCPApplicationHandle = c_uint64
+
+
 class MCPApplication(object):
     IMCPApplicationApi_Version = c_char_p(b'PROC_TABLE:IMCPApplication_002')
+
     class MCPApplicationApi(Structure):
         _fields_ = [
             ('CreateApplication', CFUNCTYPE(c_int32, POINTER(MCPApplicationHandle))),
@@ -804,12 +862,16 @@ class MCPApplication(object):
             ('DisableApplicationCacheEvents', CFUNCTYPE(c_int32, MCPApplicationHandle)),
             ('ApplicationCacheEventsIsEnabled', CFUNCTYPE(c_int32, POINTER(c_bool), MCPApplicationHandle)),
             ('CloseApplication', CFUNCTYPE(c_int32, MCPApplicationHandle)),
-            ('GetApplicationRigidBodies', CFUNCTYPE(c_int32, POINTER(c_uint64), POINTER(c_uint32), MCPApplicationHandle)),
+            ('GetApplicationRigidBodies',
+             CFUNCTYPE(c_int32, POINTER(c_uint64), POINTER(c_uint32), MCPApplicationHandle)),
             ('GetApplicationAvatars', CFUNCTYPE(c_int32, POINTER(c_uint64), POINTER(c_uint32), MCPApplicationHandle)),
-            ('PollApplicationNextEvent', CFUNCTYPE(c_int32, POINTER(MCPEvent), POINTER(c_uint32), MCPApplicationHandle)),
-            ('GetApplicationSensorModules', CFUNCTYPE(c_int32, POINTER(c_uint64), POINTER(c_uint32), MCPApplicationHandle)),
+            (
+            'PollApplicationNextEvent', CFUNCTYPE(c_int32, POINTER(MCPEvent), POINTER(c_uint32), MCPApplicationHandle)),
+            ('GetApplicationSensorModules',
+             CFUNCTYPE(c_int32, POINTER(c_uint64), POINTER(c_uint32), MCPApplicationHandle)),
             ('QueuedServerCommand', CFUNCTYPE(c_int32, MCPCommandHandle, MCPApplicationHandle))
         ]
+
     api = POINTER(MCPApplicationApi)()
 
     def __init__(self):
@@ -817,7 +879,7 @@ class MCPApplication(object):
             err = MocapApi.MCPGetGenericInterface(self.IMCPApplicationApi_Version, pointer(self.api))
             if err != MCPError.NoError:
                 raise RuntimeError('Can not get IMCPApplication interface: {0}'.format(MCPError._fields[err]))
-        
+
         self._handle = MCPApplicationHandle()
         print(self._handle)
         err = self.api.contents.CreateApplication(pointer(self._handle))
@@ -830,7 +892,7 @@ class MCPApplication(object):
         print('abc')
         if err != MCPError.NoError:
             raise RuntimeError('Can not destroy application: {0}'.format(MCPError._fields[err]))
-    
+
     def set_settings(self, settings):
         err = self.api.contents.SetApplicationSettings(settings.handle, self._handle)
         if err != MCPError.NoError:
@@ -848,7 +910,7 @@ class MCPApplication(object):
 
     def is_opened(self):
         return self._is_opened
-    
+
     def enable_event_cache(self):
         err = self.api.contents.EnableApplicationCacheEvents(self._handle)
         return err == MCPError.NoError, MCPError._fields[err]
@@ -871,7 +933,8 @@ class MCPApplication(object):
 
     def get_rigid_bodies(self):
         rigid_body_size = c_uint32()
-        err = self.api.contents.GetApplicationRigidBodies(POINTER(MCPRigidBodyHandle)(), pointer(rigid_body_size), self._handle)
+        err = self.api.contents.GetApplicationRigidBodies(POINTER(MCPRigidBodyHandle)(), pointer(rigid_body_size),
+                                                          self._handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get application rigid bodies: {0}'.format(MCPError._fields[err]))
         rigid_body_handles = (MCPRigidBodyHandle * rigid_body_size.value)()
@@ -885,24 +948,27 @@ class MCPApplication(object):
         err = self.api.contents.GetApplicationAvatars(POINTER(MCPAvatarHandle)(), pointer(avatar_count), self._handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get application avatars: {0}'.format(MCPError._fields[err]))
-        avatar_handles = (MCPAvatarHandle * avatar_count.value) ()
+        avatar_handles = (MCPAvatarHandle * avatar_count.value)()
         err = self.api.contents.GetApplicationAvatars(avatar_handles, pointer(avatar_count), self._handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get application avatars: {0}'.format(MCPError._fields[err]))
         return [MCPAvatar(avatar_handles[i]) for i in range(avatar_count.value)]
 
-##################################################
+    ##################################################
     def get_sensor_module(self):
         sensor_module_count = c_uint32()
-        err = self.api.contents.GetApplicationSensorModules(POINTER(MCPSensorModuleHandle)(), pointer(sensor_module_count), self._handle)
+        err = self.api.contents.GetApplicationSensorModules(POINTER(MCPSensorModuleHandle)(),
+                                                            pointer(sensor_module_count), self._handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get application sensor module: {0}'.format(MCPError._fields[err]))
         sensor_module_handles = (MCPSensorModuleHandle * sensor_module_count.value)()
-        err = self.api.contents.GetApplicationSensorModules(sensor_module_handles, pointer(sensor_module_count), self._handle)
+        err = self.api.contents.GetApplicationSensorModules(sensor_module_handles, pointer(sensor_module_count),
+                                                            self._handle)
         if err != MCPError.NoError:
             raise RuntimeError('Can not get application sensor module: {0}'.format(MCPError._fields[err]))
         return [MCPSensorModule(sensor_module_handles[i]) for i in range(sensor_module_count.value)]
-##################################################
+
+    ##################################################
 
     def poll_next_event(self):
         evt_count = c_uint32(0)
@@ -926,9 +992,12 @@ class MCPApplication(object):
         if err != MCPError.NoError:
             raise RuntimeError('Can not queue server command: {0}'.format(MCPError._fields[err]))
 
+
 class Utils:
     def print_joint(joint):
-        print('{0} {1} {2} {3}'.format(joint.get_name(), joint.get_local_rotation(), joint.get_local_rotation_by_euler(), joint.get_local_position()))
+        print(
+            '{0} {1} {2} {3}'.format(joint.get_name(), joint.get_local_rotation(), joint.get_local_rotation_by_euler(),
+                                     joint.get_local_position()))
 
         children = joint.get_children()
         for child in children:
@@ -937,7 +1006,7 @@ class Utils:
     def print_error(evt):
         print('Error --> {0} <--'.format(MCPError._fields[evt.event_data.error]))
 
-# working capturing example
+# working capturing examples
 # if __name__ == '__main__':
 #     mocap_app = MCPApplication()
 #     settings = MCPSettings()

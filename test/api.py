@@ -1,6 +1,6 @@
-from mocap_api import *
+from ..src.mocap_api import *
+import numpy as np
 import time
-
 
 '''
 'EMCPCoordSystem', ['RightHanded','LeftHanded'](0, 1)
@@ -12,8 +12,6 @@ import time
 '''
 
 
-lists = ['LeftForeArm', 'RightForeArm', 'LeftLeg', 'RightLeg', 'Head', 'Hips']
-
 class MocapApi:
     def __init__(self, server_ip, server_port):
         self.mocap_app = MCPApplication()  # 创建MCPApplication实例
@@ -21,6 +19,8 @@ class MocapApi:
         self.settings.set_calc_data()  # 设置计算数据
         self.settings.set_tcp(server_ip, server_port)  # 设置服务器IP和端口
         self.mocap_app.set_settings(self.settings)  # 将设置应用到MCPApplication实例
+        self.joint_lists = ['LeftForeArm', 'RightForeArm', 'LeftLeg', 'RightLeg', 'Head', 'Hips'
+                            ]
 
         rendersettings = MCPRenderSettings()  # 创建MCPRenderSettings实例
         rendersettings.set_coord_system(0)  # 设置坐标系为右手坐标系
@@ -37,26 +37,43 @@ class MocapApi:
             print('ERROR: Connect failed -', msg)  # 连接失败
 
     def start_record(self):
-        evts = self.mocap_app.poll_next_event()  # 获取下一个事件
-        data_lists = []
+        evts = self.mocap_app.poll_next_event()  # event具体是什么
+        direction_data = np.zeros((17, 3, 3))  # 17个关节，每个关节有一个方向矩阵
+        acceleration_data = np.zeros((17, 3))  # 17个关节，每个关节有一个加速度vector
+        output_data = []
+
         for evt in evts:
-            if evt.event_type == MCPEventType.AvatarUpdated:  # 如果事件类型是AvatarUpdated
-                avatar = MCPAvatar(evt.event_data.avatar_handle)  # 获取Avatar实例
-                joints = avatar.get_joints()  # 获取关节列表
-                for desired_name in lists:
+            if evt.event_type == MCPEventType.AvatarUpdated:
+                avatar = MCPAvatar(evt.event_data.avatar_handle)
+                joints = avatar.get_joints()
+                for i, desired_name in enumerate(self.joint_lists):
                     for joint in joints:
-                        name = joint.get_name()  # 获取关节名称
-                        if name == desired_name:  # 如果关节名称与所需名称匹配
-                            sensor = joint.get_sensor_module()  # 获取传感器模块
-                            w, x, y, z = sensor.get_posture()  # 获取姿势数据
-                            
-                            acc_x, acc_y, acc_z = sensor.get_accelerated_velocity()  # 获取加速度数据
-                            data_lists.append((w, x, y, z, acc_x, acc_y, acc_z))  # 将数据添加到列表中
-            elif evt.event_type == MCPEventType.RigidBodyUpdated:  # 如果事件类型是RigidBodyUpdated
-                raise RuntimeError('Rigid body updated')  # 抛出运行时错误
+                        name = joint.get_name()
+                        if name == desired_name:
+                            sensor = joint.get_sensor_module()
+                            w, x, y, z = sensor.get_posture()
+                            direction_data[i] = np.array(
+                                [[1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y],
+                                 [2 * x * y + 2 * w * z, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * w * x],
+                                 [2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, 1 - 2 * x * x - 2 * y * y]])
+
+                            acc_x, acc_y, acc_z = sensor.get_accelerated_velocity()
+                            acceleration_data[i] = np.array([[acc_x, acc_y, acc_z]])
+
+                            # 展平direction_data
+                            direction_data = direction_data.flatten()
+                            acceleration_data = acceleration_data.flatten()
+
+                            data = np.concatenate((direction_data, acceleration_data), axis=0)
+
+                            data = {name: data}
+                            output_data.append(data)
+            elif evt.event_type == MCPEventType.RigidBodyUpdated:
+                raise RuntimeError('Rigid body updated')
             else:
-                raise RuntimeError('ERROR!')  # 抛出运行时错误
-        return data_lists  # 返回数据列表
+                raise RuntimeError('ERROR!')
+
+        return output_data
 
     def disconnect(self):
         print('api close.')  # 关闭连接
