@@ -1,6 +1,10 @@
-from ..src.mocap_api import *
+from mocap_api import *
 import numpy as np
 import time
+# import asyncio
+import pandas as pd
+# import tracemalloc
+# tracemalloc.start()
 
 '''
 'EMCPCoordSystem', ['RightHanded','LeftHanded'](0, 1)
@@ -38,33 +42,39 @@ class MocapApi:
 
     def start_record(self):
         evts = self.mocap_app.poll_next_event()  # event具体是什么
-        direction_data = np.zeros((17, 3, 3))  # 17个关节，每个关节有一个方向矩阵
-        acceleration_data = np.zeros((17, 3))  # 17个关节，每个关节有一个加速度vector
+        # direction_data = np.zeros((17, 3, 3))  # 17个关节，每个关节有一个方向矩阵
+        # acceleration_data = np.zeros((17, 3))  # 17个关节，每个关节有一个加速度vector
+
         output_data = []
 
         for evt in evts:
             if evt.event_type == MCPEventType.AvatarUpdated:
                 avatar = MCPAvatar(evt.event_data.avatar_handle)
                 joints = avatar.get_joints()
+
                 for i, desired_name in enumerate(self.joint_lists):
+                    # direction_data = []
+                    # acceleration_data = []
                     for joint in joints:
                         name = joint.get_name()
                         if name == desired_name:
                             sensor = joint.get_sensor_module()
                             w, x, y, z = sensor.get_posture()
-                            direction_data[i] = np.array(
+                            w, x, y, z = float(w), float(x), float(y), float(z)
+                            posture_array = np.array(
                                 [[1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y],
                                  [2 * x * y + 2 * w * z, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * w * x],
                                  [2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, 1 - 2 * x * x - 2 * y * y]])
 
                             acc_x, acc_y, acc_z = sensor.get_accelerated_velocity()
-                            acceleration_data[i] = np.array([[acc_x, acc_y, acc_z]])
+                            acc_x, acc_y, acc_z = float(acc_x), float(acc_y), float(acc_z)
+                            acceleration_array = np.array([[acc_x, acc_y, acc_z]])
 
                             # 展平direction_data
-                            direction_data = direction_data.flatten()
-                            acceleration_data = acceleration_data.flatten()
+                            posture_array = posture_array.flatten()
+                            acceleration_array = acceleration_array.flatten()
 
-                            data = np.concatenate((direction_data, acceleration_data), axis=0)
+                            data = np.concatenate((posture_array, acceleration_array), axis=0)
 
                             data = {name: data}
                             output_data.append(data)
@@ -79,6 +89,30 @@ class MocapApi:
         print('api close.')  # 关闭连接
         self.mocap_app.close()  # 关闭MCPApplication实例
 
+
+def test_mocap_api(ip, port):
+    api = MocapApi(ip, port)
+    # start_time = time.time()
+    # distance = 0
+    while True:
+        joints_data = api.start_record()
+        if list(joints_data) == []:
+            continue
+        print(joints_data)
+        t = time.time()
+        # distance = t - start_time
+        # # joints_data 示例为{'test': array([ 0.74, -0.2 ,  0.22,  0.28,  0.8 ,  0.04, -0.1 ,  0.2 ,  0.9 ,
+        # #         0.1 ,  0.2 ,  0.3 ])}
+        # with open('joints_data.txt', 'w+') as f:
+        #     f.write(str(joints_data) + '\n')
+        # 使用pandas将其写入csv文件
+        df = pd.DataFrame(joints_data)
+        df.to_csv(f'joints_data_{t}.csv', mode='w+', header=True)
+        print(f"Time: {t}, Data: {joints_data}")
+
+
+if __name__ == '__main__':
+    test_mocap_api("127.0.0.1", 7011)
 # if __name__ == '__main__':
 #     mocap_app = MCPApplication()
 #     settings = MCPSettings()

@@ -2,7 +2,7 @@ import asyncio
 import time
 import pandas as pd
 
-from api import MocapApi
+from mocap_api.api import MocapApi
 
 
 async def test_mocap_api(ip, port):
