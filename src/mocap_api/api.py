@@ -107,7 +107,7 @@ def test_mocap_api(ip, port):
         #     f.write(str(joints_data) + '\n')
         # 使用pandas将其写入csv文件
         df = pd.DataFrame(joints_data)
-        df.to_csv('qianshen_tests_data02.csv', mode='a+', header=True)
+        df.to_csv('fangrui12.csv', mode='a+', header=True)
         print(f"Time: {t}, Data: {joints_data}")
 
 
