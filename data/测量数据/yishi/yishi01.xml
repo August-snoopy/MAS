@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<body name="yishi01">
+    <desc name="Body" length="58"/>
+    <desc name="Foot length" length="26.24"/>
+    <desc name="Forearm" length="29"/>
+    <desc name="Head" length="16.5"/>
+    <desc name="Heel height" length="8.08"/>
+    <desc name="Hip width" length="22"/>
+    <desc name="Lower leg" length="44"/>
+    <desc name="Neck" length="16"/>
+    <desc name="Palm" length="18"/>
+    <desc name="Shoulder width" length="37"/>
+    <desc name="Upper arm" length="31"/>
+    <desc name="Upper leg" length="50"/>
+</body>

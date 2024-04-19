@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<body name="ruiyan">
+    <desc name="Body" length="49"/>
+    <desc name="Foot length" length="25.58"/>
+    <desc name="Forearm" length="26"/>
+    <desc name="Head" length="15.5"/>
+    <desc name="Heel height" length="7.87"/>
+    <desc name="Hip width" length="20"/>
+    <desc name="Lower leg" length="42"/>
+    <desc name="Neck" length="10"/>
+    <desc name="Palm" length="19"/>
+    <desc name="Shoulder width" length="34"/>
+    <desc name="Upper arm" length="31"/>
+    <desc name="Upper leg" length="52"/>
+</body>
