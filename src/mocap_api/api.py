@@ -1,11 +1,9 @@
-from mocap_api import *
+from __future__ import annotations
+from typing import List, Dict, Optional, Any
+from dataclasses import dataclass, field
 import numpy as np
-import time
-# import asyncio
-import pandas as pd
-
-# import tracemalloc
-# tracemalloc.start()
+from mocap_api import MCPApplication, MCPSettings, MCPRenderSettings, MCPEventType, MCPAvatar
+import csv
 
 '''
 'EMCPCoordSystem', ['RightHanded','LeftHanded'](0, 1)
@@ -17,14 +15,40 @@ import pandas as pd
 '''
 
 
+@dataclass
+class HumanFeatures:
+    """人体特征信息"""
+    body_length: float
+    foot_length: float
+    forearm_length: float
+    head_length: float
+    heel_height: float
+    hip_width: float
+    lower_leg_length: float
+    neck_length: float
+    palm_length: float
+    shoulder_width: float
+    upper_arm_length: float
+    upper_leg_length: float
+
+
+@dataclass
 class MocapApi:
-    def __init__(self, server_ip, server_port):
+    """Motion Capture API"""
+    server_ip: str
+    server_port: int
+    joint_lists: List[str] = field(
+        default_factory=lambda: ['LeftForeArm', 'RightForeArm', 'LeftLeg', 'RightLeg', 'Head', 'Hips'])
+    human_features: Optional[HumanFeatures] = None
+    labels: Optional[List[str]] = None
+    current_label_index: int = 0
+
+    def __post_init__(self):
         self.mocap_app = MCPApplication()  # 创建MCPApplication实例
         self.settings = MCPSettings()  # 创建MCPSettings实例
         self.settings.set_calc_data()  # 设置计算数据
-        self.settings.set_tcp(server_ip, server_port)  # 设置服务器IP和端口
+        self.settings.set_tcp(self.server_ip, self.server_port)  # 设置服务器IP和端口
         self.mocap_app.set_settings(self.settings)  # 将设置应用到MCPApplication实例
-        self.joint_lists = ['LeftForeArm', 'RightForeArm', 'LeftLeg', 'RightLeg', 'Head', 'Hips']
 
         rendersettings = MCPRenderSettings()  # 创建MCPRenderSettings实例
         rendersettings.set_coord_system(0)  # 设置坐标系为右手坐标系
@@ -40,8 +64,9 @@ class MocapApi:
         else:
             print('ERROR: Connect failed -', msg)  # 连接失败
 
-    def start_record(self):
-        evts = self.mocap_app.poll_next_event()  # event具体是什么
+    def start_record(self) -> list[dict[str, list[np.ndarray[Any, np.dtype[Any]]] | list[float] | list[str]]]:
+        """开始记录数据"""
+        evts = self.mocap_app.poll_next_event()  # 获取事件
 
         output_data = []
 
@@ -50,12 +75,10 @@ class MocapApi:
                 avatar = MCPAvatar(evt.event_data.avatar_handle)
                 joints = avatar.get_joints()
 
-                # for i, desired_name in enumerate(self.joint_lists):
-                # direction_data = []
-                # acceleration_data = []
+                data_dict = {}
+
                 for joint in joints:
                     name = joint.get_name()
-                    # if name == desired_name:
                     sensor = joint.get_sensor_module()
                     w, x, y, z = sensor.get_posture()
                     w, x, y, z = float(w), float(x), float(y), float(z)
@@ -68,14 +91,39 @@ class MocapApi:
                     acc_x, acc_y, acc_z = float(acc_x), float(acc_y), float(acc_z)
                     acceleration_array = np.array([[acc_x, acc_y, acc_z]])
 
-                    # 展平direction_data
+                    # 展平posture_array
                     posture_array = posture_array.flatten()
-                    acceleration_array = acceleration_array.flatten()
 
-                    data = np.concatenate((posture_array, acceleration_array), axis=0)
+                    # 为posture_array的每个元素添加标签
+                    for i in range(9):
+                        data_dict[f"{name}_position_{i // 3 + 1}{i % 3 + 1}"] = [posture_array[i]]
 
-                    data = {name: data}
-                    output_data.append(data)
+                    # 为acceleration_array的每个元素添加标签
+                    for i in range(3):
+                        data_dict[f"{name}_acceleration_{i + 1}"] = [acceleration_array[0][i]]
+
+                # 添加人体特征信息
+                if self.human_features is not None:
+                    data_dict["body_length"] = [self.human_features.body_length]
+                    data_dict["foot_length"] = [self.human_features.foot_length]
+                    data_dict["forearm_length"] = [self.human_features.forearm_length]
+                    data_dict["head_length"] = [self.human_features.head_length]
+                    data_dict["heel_height"] = [self.human_features.heel_height]
+                    data_dict["hip_width"] = [self.human_features.hip_width]
+                    data_dict["lower_leg_length"] = [self.human_features.lower_leg_length]
+                    data_dict["neck_length"] = [self.human_features.neck_length]
+                    data_dict["palm_length"] = [self.human_features.palm_length]
+                    data_dict["shoulder_width"] = [self.human_features.shoulder_width]
+                    data_dict["upper_arm_length"] = [self.human_features.upper_arm_length]
+                    data_dict["upper_leg_length"] = [self.human_features.upper_leg_length]
+
+                # 添加标签信息
+                if self.labels is not None and self.current_label_index < len(self.labels):
+                    data_dict["label"] = [self.labels[self.current_label_index]]
+                else:
+                    data_dict["label"] = ["None"]
+
+                output_data.append(data_dict)
             elif evt.event_type == MCPEventType.RigidBodyUpdated:
                 raise RuntimeError('Rigid body updated')
             else:
@@ -83,24 +131,78 @@ class MocapApi:
 
         return output_data
 
+    def change_label(self):
+        """鼠标点击事件回调,用于切换标签"""
+        if self.labels is not None and self.current_label_index < len(self.labels) - 1:
+            self.current_label_index += 1
+        else:
+            self.disconnect()
+
     def disconnect(self):
+        """断开连接"""
         print('api close.')  # 关闭连接
         self.mocap_app.close()  # 关闭MCPApplication实例
 
 
-def test_mocap_api(ip, port):
-    api = MocapApi(ip, port)
+def save_data_to_csv(data: List[Dict[str, np.ndarray]], output_path: str):
+    """
+    将获取到的数据存储为CSV表格
+
+    :param data: 包含数据的字典列表,每个字典表示一个时间步的数据
+    :param output_path: 输出CSV文件的路径
+    """
+    # 获取所有特征名
+    fieldnames = list(data[0].keys())
+
+    with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # 写入表头
+        writer.writeheader()
+
+        # 写入数据
+        for row in data:
+            # 将numpy数组转换为列表
+            row = {key: value[0] for key, value in row.items()}
+            writer.writerow(row)
+
+    print(f"数据已成功存储至 {output_path}")
+
+
+# 示例用法
+if __name__ == "__main__":
+    # 人体特征信息
+    human_features = HumanFeatures(
+        body_length=47,
+        foot_length=24.8,
+        forearm_length=29,
+        head_length=17,
+        heel_height=7.64,
+        hip_width=25.5,
+        lower_leg_length=43,
+        neck_length=14,
+        palm_length=17.5,
+        shoulder_width=40,
+        upper_arm_length=26,
+        upper_leg_length=48
+    )
+
+    # 创建MocapApi实例
+    mocap_api = MocapApi(
+        server_ip="127.0.0.1",
+        server_port=7011,
+        human_features=human_features,
+        labels=["伸手", "放下", "伸手", "收缩", "伸手", "收缩", "放下"]
+    )
+
+    # 开始记录数据
+    data = []
     while True:
-        joints_data = api.start_record()
-        if not list(joints_data):
-            continue
-        print(joints_data)
-        t = time.time()
-        # 使用pandas将其写入csv文件
-        df = pd.DataFrame(joints_data)
-        df.to_csv('fangrui12.csv', mode='a+', header=True)
-        print(f"Time: {t}, Data: {joints_data}")
+        try:
+            frame_data = mocap_api.start_record()
+            data.extend(frame_data)
+        except RuntimeError:
+            break
 
-
-if __name__ == '__main__':
-    test_mocap_api("127.0.0.1", 7011)
+    # 将数据存储为CSV文件
+    save_data_to_csv(data, "output.csv")
