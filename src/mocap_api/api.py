@@ -169,8 +169,8 @@ def save_data_to_csv(data: List[Dict[str, np.ndarray]], output_path: str):
         for row in data:
             # 将numpy数组转换为列表
             row = {key: value[0] for key, value in row.items()}
-            if row["label"] == None:
-                continue
+            # if row["label"] == None:
+            #     continue
             writer.writerow(row)
 
     print(f"数据已成功存储至 {output_path}")
@@ -199,8 +199,9 @@ if __name__ == "__main__":
         server_ip="127.0.0.1",
         server_port=7011,
         human_features=human_features,
-        # labels=[None, "引体向上-伸手", "引体向上-放下", "引体向上-伸手", "引体向上-收缩", "引体向上-伸手", "引体向上-收缩", "引体向上-放下"]
-        labels=[None, "左臂上举", None, "右臂上举", None, "双手向前平举",None, "左高抬腿",None, "右高抬腿",None, "静坐", None, "站立",None, "步行",]
+        labels=[None, "引体向上-伸手", None, "引体向上-放下", None, "引体向上-伸手", None, "引体向上-收缩", None, "引体向上-伸手",
+                 None, "引体向上-收缩", None,"引体向上-伸手", None, "引体向上-放下"]
+        # labels=[None, "左臂上举", None, "右臂上举", None, "双手向前平举",None, "左高抬腿",None, "右高抬腿",None, "静坐", None, "站立",None, "步行",]
         #labels=[None, "1", None, 2]
     )
 
@@ -226,9 +227,9 @@ if __name__ == "__main__":
             t = time.time()
             data.extend(frame_data)
             # print(f"Time: {t}")
-            if t - start_time >= 5:
-                print("Time out!", t - start_time)
-                mocap_api.change_label()
+            # if t - start_time >= 5:
+            #     print("Time out!", t - start_time)
+            #     mocap_api.change_label()
         except RuntimeError:
             break
     
@@ -236,4 +237,4 @@ if __name__ == "__main__":
     mocap_api.disconnect()
 
     # 将数据存储为CSV文件
-    save_data_to_csv(data, "data/20240507/5.5.csv")
+    save_data_to_csv(data, "data/20240508/yishi-super-25.csv")
