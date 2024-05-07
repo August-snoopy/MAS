@@ -200,8 +200,8 @@ if __name__ == "__main__":
         server_port=7011,
         human_features=human_features,
         # labels=[None, "引体向上-伸手", "引体向上-放下", "引体向上-伸手", "引体向上-收缩", "引体向上-伸手", "引体向上-收缩", "引体向上-放下"]
-        # labels=[None, "左臂上举", None, "右臂上举", None, "双手向前平举",None, "左高抬腿",None, "右高抬腿",None, "静坐", None, "站立",None, "步行",]
-        labels=[None, "1", None, 2]
+        labels=[None, "左臂上举", None, "右臂上举", None, "双手向前平举",None, "左高抬腿",None, "右高抬腿",None, "静坐", None, "站立",None, "步行",]
+        #labels=[None, "1", None, 2]
     )
 
     # 监听鼠标点击事件
@@ -236,4 +236,4 @@ if __name__ == "__main__":
     mocap_api.disconnect()
 
     # 将数据存储为CSV文件
-    save_data_to_csv(data, "test02.csv")
+    save_data_to_csv(data, "data/20240507/5.5.csv")
