@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 import numpy as np
 from mocap_api import MCPApplication, MCPSettings, MCPRenderSettings, MCPEventType, MCPAvatar
 import csv
+import time
+from pynput import mouse
 
 '''
 'EMCPCoordSystem', ['RightHanded','LeftHanded'](0, 1)
@@ -130,18 +132,20 @@ class MocapApi:
                 raise RuntimeError('ERROR!')
 
         return output_data
+    
 
     def change_label(self):
         """鼠标点击事件回调,用于切换标签"""
         if self.labels is not None and self.current_label_index < len(self.labels) - 1:
             self.current_label_index += 1
         else:
-            self.disconnect()
+            return self.disconnect()
 
     def disconnect(self):
         """断开连接"""
-        print('api close.')  # 关闭连接
+        print("mocapi closed!")
         self.mocap_app.close()  # 关闭MCPApplication实例
+        return 501
 
 
 def save_data_to_csv(data: List[Dict[str, np.ndarray]], output_path: str):
@@ -192,17 +196,28 @@ if __name__ == "__main__":
         server_ip="127.0.0.1",
         server_port=7011,
         human_features=human_features,
-        labels=["伸手", "放下", "伸手", "收缩", "伸手", "收缩", "放下"]
+        labels=["引体向上-伸手", "引体向上-放下", "引体向上-伸手", "引体向上-收缩", "引体向上-伸手", "引体向上-收缩", "引体向上-放下"]
     )
+
+    # 监听鼠标点击事件
+    listener = mouse.Listener(on_click=lambda x, y, button, pressed: mocap_api.change_label())
+    listener.start()
 
     # 开始记录数据
     data = []
-    while True:
+    while mocap_api.current_label_index < (len(mocap_api.labels) - 1):
+        print(mocap_api.current_label_index, len(mocap_api.labels))
         try:
             frame_data = mocap_api.start_record()
+            if list(frame_data) == []:
+                continue
+            t = time.time()
             data.extend(frame_data)
+            print(f"Time: {t}")
         except RuntimeError:
             break
 
+    mocap_api.disconnect()
+
     # 将数据存储为CSV文件
-    save_data_to_csv(data, "output.csv")
+    save_data_to_csv(data, "test02.csv")
