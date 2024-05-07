@@ -136,16 +136,17 @@ class MocapApi:
 
     def change_label(self):
         """鼠标点击事件回调,用于切换标签"""
-        if self.labels is not None and self.current_label_index < len(self.labels) - 1:
-            self.current_label_index += 1
-        else:
-            return self.disconnect()
+
+        self.current_label_index += 1
+        # else:
+        #     return self.disconnect()
 
     def disconnect(self):
         """断开连接"""
         print("mocapi closed!")
         self.mocap_app.close()  # 关闭MCPApplication实例
         return 501
+
 
 
 def save_data_to_csv(data: List[Dict[str, np.ndarray]], output_path: str):
@@ -168,6 +169,8 @@ def save_data_to_csv(data: List[Dict[str, np.ndarray]], output_path: str):
         for row in data:
             # 将numpy数组转换为列表
             row = {key: value[0] for key, value in row.items()}
+            if row["label"] == None:
+                continue
             writer.writerow(row)
 
     print(f"数据已成功存储至 {output_path}")
@@ -196,7 +199,9 @@ if __name__ == "__main__":
         server_ip="127.0.0.1",
         server_port=7011,
         human_features=human_features,
-        labels=["引体向上-伸手", "引体向上-放下", "引体向上-伸手", "引体向上-收缩", "引体向上-伸手", "引体向上-收缩", "引体向上-放下"]
+        # labels=[None, "引体向上-伸手", "引体向上-放下", "引体向上-伸手", "引体向上-收缩", "引体向上-伸手", "引体向上-收缩", "引体向上-放下"]
+        # labels=[None, "左臂上举", None, "右臂上举", None, "双手向前平举",None, "左高抬腿",None, "右高抬腿",None, "静坐", None, "站立",None, "步行",]
+        labels=[None, "1", None, 2]
     )
 
     # 监听鼠标点击事件
@@ -205,18 +210,29 @@ if __name__ == "__main__":
 
     # 开始记录数据
     data = []
-    while mocap_api.current_label_index < (len(mocap_api.labels) - 1):
-        print(mocap_api.current_label_index, len(mocap_api.labels))
+    start_time = time.time()
+
+    while mocap_api.current_label_index <= (len(mocap_api.labels) - 1):
+        if mocap_api.labels[mocap_api.current_label_index] == None:
+            start_time = time.time()
+            print("take break")
+        else:
+            print("start")
+        # print(mocap_api.current_label_index, len(mocap_api.labels))
         try:
             frame_data = mocap_api.start_record()
             if list(frame_data) == []:
                 continue
             t = time.time()
             data.extend(frame_data)
-            print(f"Time: {t}")
+            # print(f"Time: {t}")
+            if t - start_time >= 5:
+                print("Time out!", t - start_time)
+                mocap_api.change_label()
         except RuntimeError:
             break
-
+    
+            
     mocap_api.disconnect()
 
     # 将数据存储为CSV文件
