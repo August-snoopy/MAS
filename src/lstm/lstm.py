@@ -4,9 +4,10 @@ import torch.optim as optim
 import numpy as np
 import pandas as pd
 from typing import Tuple
+from torch.utils.data import Dataset, DataLoader
 
 
-class IMUDataset(torch.utils.data.Dataset):
+class IMUDataset(Dataset):
     """IMU数据集"""
 
     def __init__(self, data: pd.DataFrame, seq_length: int, target_cols: list):
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     # 创建数据集和数据加载器
     target_cols = ['label']  # 假设标签列为 'label'
     dataset = IMUDataset(data, seq_length, target_cols)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+    dataloader = DataLoader(dataset, batch_size=batch_size)
 
     # 创建模型、损失函数和优化器
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
