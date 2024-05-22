@@ -4,30 +4,29 @@ import os
 import time
 
 import torch
-import torch.functional as F
+import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
-from .data import HumanBodyDataset
-from .model import HumanBodyGNN
+from src.stgnn.data import HumanBodyDataset
+from src.stgnn.model import HumanBodyGNN
 
-os.chdir(os.path.join(os.path.dirname(__file__), '../../'))
-# 读取数据进行预处理
-data_path = os.path.join('data', '20240508')
+os.chdir(os.path.join(os.path.dirname(__file__), '..\\..\\'))
 # 使用数据集
-dataset = HumanBodyDataset(root=data_path)
+dataset = HumanBodyDataset(root='data')
+print(len(dataset))
 
 # 划分训练集和测试集
 train_dataset, test_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=20000, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=20000, shuffle=False)
 
 # 配置管理
 parser = argparse.ArgumentParser(description='Training Config')
-parser.add_argument('--epochs', default=200, type=int, help='number of total epochs')
-parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+parser.add_argument('--epochs', default=10, type=int, help='number of total epochs')
+parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
 parser.add_argument('--checkpoint', default='checkpoint.pth', help='path to checkpoint')
 args = parser.parse_args()
 
@@ -48,6 +47,7 @@ def train(model, train_loader, optimizer, scheduler, epoch):
         data = data.to(device)
         optimizer.zero_grad()
         output = model(data)
+        output = output.squeeze(1)
         loss = F.mse_loss(output, data.y)
         loss.backward()
         optimizer.step()
@@ -56,23 +56,22 @@ def train(model, train_loader, optimizer, scheduler, epoch):
         proc_data.set_postfix(loss=running_loss / (i + 1), acc=correct / ((i + 1) * data.y.size(0)))
 
     # 记录训练损失和准确率
-    summary_writer.add_scalar('Loss/train', running_loss / len(train_loader), epoch)
+    train_loss = running_loss / len(train_loader)
+    summary_writer.add_scalar('Loss/train', train_loss, epoch)
     summary_writer.add_scalar('Acc/train', correct / len(train_loader.dataset), epoch)
-
-    # 调整学习率
-    scheduler.step()
 
     # 保存模型
     if epoch % 10 == 0:
         checkpoint = {
             'epoch': epoch,
             'state_dict': model.state_dict(),
-            'optimizer': optimizer.state_dict()
+            'optimizer': optimizer.state_dict(),
+            'best_acc': best_acc
         }
         torch.save(checkpoint, args.checkpoint)
         logging.info(f'Checkpoint saved to {args.checkpoint}')
 
-    return running_loss / len(train_loader), correct / len(train_loader.dataset)
+    return train_loss, correct / len(train_loader.dataset)
 
 
 def test(model, loader):
@@ -84,6 +83,7 @@ def test(model, loader):
         for i, data in enumerate(proc_data):
             data = data.to(device)
             output = model(data)
+            output = output.squeeze(1)
             loss = F.mse_loss(output, data.y)
             running_loss += loss.item()
             correct += ((output - data.y).abs() < 0.1).sum().item()
@@ -99,7 +99,7 @@ def test(model, loader):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = HumanBodyGNN().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-scheduler = torch.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, verbose=True)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, verbose=True)
 
 # 主循环
 start_epoch = 1
@@ -109,7 +109,7 @@ best_acc = 0.0
 if os.path.exists(args.checkpoint):
     checkpoint = torch.load(args.checkpoint)
     start_epoch = checkpoint['epoch'] + 1
-    best_acc = checkpoint['best_acc']
+    best_acc = checkpoint.get('best_acc', 0.0)
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     logger.info(f'Loaded checkpoint from {args.checkpoint}')
@@ -120,6 +120,9 @@ for epoch in range(start_epoch, args.epochs + 1):
     # 训练和评估
     train_loss, train_acc = train(model, train_loader, optimizer, scheduler, epoch)
     test_loss, test_acc = test(model, test_loader)
+
+    # 调整学习率
+    scheduler.step(train_loss)
 
     # 保存最佳模型
     if test_acc > best_acc:

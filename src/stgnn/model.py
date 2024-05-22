@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, GATConv, global_mean_pool
 
+
 class HumanBodyGNN(torch.nn.Module):
     def __init__(self):
         super(HumanBodyGNN, self).__init__()

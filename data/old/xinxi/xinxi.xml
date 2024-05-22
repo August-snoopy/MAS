@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<body name="xinxi">
+    <desc name="Body" length="45"/>
+    <desc name="Foot length" length="22.62"/>
+    <desc name="Forearm" length="23"/>
+    <desc name="Head" length="15.5"/>
+    <desc name="Heel height" length="6.96"/>
+    <desc name="Hip width" length="20"/>
+    <desc name="Lower leg" length="35"/>
+    <desc name="Neck" length="11"/>
+    <desc name="Palm" length="17.5"/>
+    <desc name="Shoulder width" length="32"/>
+    <desc name="Upper arm" length="26"/>
+    <desc name="Upper leg" length="42"/>
+</body>
