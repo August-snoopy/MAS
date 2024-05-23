@@ -3,3 +3,4 @@
 /docs/数据整理.md
 .ipynb
 runs/*?Haku
+__pycache__
