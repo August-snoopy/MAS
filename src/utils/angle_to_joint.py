@@ -1,8 +1,7 @@
 import torch
 
-def ang2joint(p3d0, pose,
-              parent={0: -1, 1: 0, 2: 0, 3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 9: 6, 10: 7, 11: 8, 12: 9, 13: 9, 14: 9,
-                      15: 12, 16: 13, 17: 14, 18: 16, 19: 17, 20: 18, 21: 19, 22: 20, 23: 21}):
+
+def ang2joint(p3d0, pose, parent=None):
     """
 
     :param p3d0:[batch_size, joint_num, 3]
@@ -10,30 +9,27 @@ def ang2joint(p3d0, pose,
     :param parent:
     :return:
     """
+    if parent is None:
+        parent = {0: -1, 1: 0, 2: 0, 3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 9: 6, 10: 7, 11: 8, 12: 9, 13: 9, 14: 9,
+                  15: 12, 16: 13, 17: 14, 18: 16, 19: 17, 20: 18, 21: 19, 22: 20, 23: 21}
     batch_num = p3d0.shape[0]
     jnum = len(parent.keys())
     J = p3d0
-    R_cube_big = rodrigues(pose.contiguous().view(-1, 1, 3)).reshape(batch_num, -1, 3, 3)
-    results = []
-    results.append(
-        with_zeros(torch.cat((R_cube_big[:, 0], torch.reshape(J[:, 0, :], (-1, 3, 1))), dim=2))
-    )
+    r_cube_big = rodrigues(pose.contiguous().view(-1, 1, 3)).reshape(batch_num, -1, 3, 3)
+    results = [with_zeros(torch.cat((r_cube_big[:, 0], torch.reshape(J[:, 0, :], (-1, 3, 1))), dim=2))]
     for i in range(1, jnum):
         results.append(
             torch.matmul(
                 results[parent[i]],
-                with_zeros(
-                    torch.cat(
-                        (R_cube_big[:, i], torch.reshape(J[:, i, :] - J[:, parent[i], :], (-1, 3, 1))),
-                        dim=2
-                    )
+                with_zeros(torch.cat(
+                    (r_cube_big[:, i], torch.reshape(J[:, i, :] - J[:, parent[i], :], (-1, 3, 1))), dim=2)
                 )
             )
         )
 
     stacked = torch.stack(results, dim=1)
-    J_transformed = stacked[:, :, :3, 3]
-    return J_transformed
+    return stacked[:, :, :3, 3]
+
 
 def rodrigues(r):
     """
@@ -67,6 +63,7 @@ def rodrigues(r):
     R = cos * i_cube + (1 - cos) * dot + torch.sin(theta) * m
     return R
 
+
 def with_zeros(x):
     """
     Append a [0, 0, 0, 1] tensor to a [3, 4] tensor.
@@ -85,5 +82,3 @@ def with_zeros(x):
     ).expand(x.shape[0], -1, -1).to(x.device)
     ret = torch.cat((x, ones), dim=1)
     return ret
-
-

@@ -1,10 +1,7 @@
 import numpy as np
-import torch
-from torch.autograd.variable import Variable
 
-from six.moves import xrange
 import torch
-import os
+
 
 def _some_variables_cmu():
     """
@@ -85,6 +82,7 @@ def _some_variables_cmu():
 
     return parent, offset, posInd, expmapInd
 
+
 def _some_variables():
     """
     borrowed from
@@ -152,6 +150,7 @@ def _some_variables():
 
     return parent, offset, rotInd, expmapInd
 
+
 def fkl_torch(rotmat, parent, offset, rotInd, expmapInd):
     """
     pytorch version of fkl.
@@ -173,6 +172,7 @@ def fkl_torch(rotmat, parent, offset, rotInd, expmapInd):
             R[:, i, :, :] = torch.matmul(R[:, i, :, :], R[:, parent[i], :, :]).clone()
             p3d[:, i, :] = torch.matmul(p3d[0, i, :], R[:, parent[i], :, :]) + p3d[:, parent[i], :]
     return p3d
+
 
 def rotmat2euler_torch(R):
     """
@@ -216,6 +216,7 @@ def rotmat2euler_torch(R):
         eul[idx_remain, :] = eul_remain
 
     return eul
+
 
 def rotmat2quat_torch(R):
     """
@@ -281,6 +282,7 @@ def expmap2rotmat_torch(r):
         (1 - torch.cos(theta).unsqueeze(1).repeat(1, 9).view(-1, 3, 3)), torch.matmul(r1, r1))
     return R
 
+
 def rotmat2xyz_torch(rotmat):
     """
     convert expmaps to joint locations
@@ -292,6 +294,7 @@ def rotmat2xyz_torch(rotmat):
     xyz = fkl_torch(rotmat, parent, offset, rotInd, expmapInd)
     return xyz
 
+
 def rotmat2xyz_torch_cmu(rotmat):
     """
     convert expmaps to joint locations
@@ -302,6 +305,7 @@ def rotmat2xyz_torch_cmu(rotmat):
     parent, offset, rotInd, expmapInd = _some_variables_cmu()
     xyz = fkl_torch(rotmat, parent, offset, rotInd, expmapInd)
     return xyz
+
 
 def find_indices_256(frame_num1, frame_num2, seq_len, input_n=10):
     """
@@ -362,4 +366,3 @@ def find_indices_srnn(frame_num1, frame_num2, seq_len, input_n=10):
             idxo1 = np.vstack((idxo1, idxs1))
             idxo2 = np.vstack((idxo2, idxs2))
     return idxo1, idxo2
-

@@ -1,9 +1,9 @@
 # encoding: utf-8
-import os
-import sys
-import time
 import argparse
-from collections import OrderedDict, defaultdict
+import os
+
+from IPython import embed
+
 
 def extant_file(x):
     """
@@ -28,5 +28,4 @@ def ensure_dir(path):
 
 
 def _dbg_interactive(var, value):
-    from IPython import embed
     embed()

@@ -1,12 +1,15 @@
 import logging
-from utils.pyt_utils import ensure_dir
+import os
+
 
 def print_and_log_info(logger, string):
     logger.info(string)
 
+
 def get_logger(file_path, name='train'):
     log_dir = '/'.join(file_path.split('/')[:-1])
-    ensure_dir(log_dir)
+    if not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
 
     logger = logging.getLogger(name)
     hdlr = logging.FileHandler(file_path, mode='a')
