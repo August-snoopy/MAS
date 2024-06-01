@@ -1,2 +1,2 @@
-from mlp import TransMLP
-from model import SiMLPe
+from .mlp import MLPBlock
+from .model import SiMLPe

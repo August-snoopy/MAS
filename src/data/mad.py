@@ -8,10 +8,9 @@ from src.utils.angle_to_joint import ang2joint
 
 
 class MADataset(Dataset):
-    def __init__(self, root: str, train: bool, shuffle = False, transform=None):
+    def __init__(self, root: str, train: bool, transform=None):
         super(MADataset, self).__init__()
         self.train = train
-        self.shuffle = shuffle
         self.root = root
         self.transform = transform if transform else self._preprocess
         self.motion_input_size: int = 50
@@ -23,7 +22,7 @@ class MADataset(Dataset):
         motion_poses = self._all_motion_poses[item]
         motion_poses = self._preprocess(motion_poses)
         while motion_poses is None:
-            idx = np.random.randint(self._file_length)
+            idx = np.random.randint(self._file_length - 1)
             motion_poses = self._all_motion_poses[idx]
             motion_poses = self._preprocess(motion_poses)
 
@@ -42,13 +41,11 @@ class MADataset(Dataset):
 
     def _load_all(self):
         all_motion_poses = []
+        file_dir = os.path.join(self.root, "amass")
         # file name 是读取root目录下的所有npz文件
-        _file_names = [os.path.join(self.root, file_name) for file_name in os.listdir(self.root) if
-                       file_name.endswith('.npz') and "_NA_" not in file_name]
-
-        # if self.shuffle:
-        #     np.random.shuffle(_file_names)
-
+        _file_names = [os.path.join(file_dir, file_name)
+                       for file_name in os.listdir(file_dir)
+                       if file_name.endswith('.npz') and "_NA_" not in file_name]
         # 创建一个切片，用于分割训练集和验证集
         if self.train:
             _file_names = _file_names[:int(len(_file_names) * 0.8)]
@@ -59,7 +56,6 @@ class MADataset(Dataset):
         for file_name in _file_names:
 
             info = np.load(file_name)
-            # info = pd.read_csv(file_name, header=0)
 
             motion_poses = info['sample']
             N = len(motion_poses)
@@ -78,7 +74,7 @@ class MADataset(Dataset):
             # motion_poses = motion_poses.reshape(T, 52, 3)
             # motion_poses[:, 0] = 0
 
-            # TODO: what is the p3d0?
+            # p3d0 is the 3D position of the beginning joints, E.g. the initial skeleton.
             p3d0_tmp = self.p3d0.repeat([motion_poses.shape[0], 1, 1])
             motion_poses = ang2joint(
                 p3d0_tmp,
@@ -94,8 +90,9 @@ class MADataset(Dataset):
             return None
         seq_len: int = motion_features.shape[0]
 
-        # 针对每一个样本，如果当前样本（训练+测试）序列长度大于预设，则随机截取
-        if self.motion_input_size + self.motion_target_size < seq_len:
+        # For each sample, if the sequence length of the current sample (training + testing) is greater than the preset,
+        # it will be randomly intercepted
+        if self.motion_input_size + self.motion_target_size <= seq_len:
             start_idx = np.random.randint(seq_len - self.motion_input_size - self.motion_target_size + 1)
             end_idx = start_idx + self.motion_input_size
         else:
@@ -111,9 +108,7 @@ class MADataset(Dataset):
         return motion
 
     def _load_skeleton(self):
-        skeleton_info = np.load(
-            os.path.join(parent_parent_parent_dir, 'data', 'mad_skeleton.npz')
-        )
+        skeleton_info = np.load(os.path.join(self.root, 'mad_skeleton.npz'))
         self.p3d0 = torch.from_numpy(skeleton_info['p3d0']).float()
         parents = skeleton_info['parents']
         self.parent = {}
@@ -129,5 +124,5 @@ if __name__ == '__main__':
     os.chdir(parent_parent_parent_dir)
     test_root = "data/amass"
     test_root = os.path.join(parent_parent_parent_dir, test_root)
-    data = MADataset(test_root, train=True, shuffle=True)
+    data = MADataset(test_root, train=True)
     print(len(data))

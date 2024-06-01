@@ -23,6 +23,7 @@ class LayerNormalV2(nn.Module):
     """
     这是另一种层归一化，但是这个归一化是在最后一个维度上进行的
     """
+
     def __init__(self, dim):
         super().__init__()
         self.epsilon = 1e-6
@@ -67,22 +68,11 @@ class TemporalFC(nn.Module):
 
 
 class MLPBlock(nn.Module):
-    def __init__(self, dim, seq, use_spatial_fc=False, layer_norm_axis='spatial'):
+    def __init__(self, seq_in):
         super().__init__()
 
-        if not use_spatial_fc:
-            self.fc0 = TemporalFC(seq)
-        else:
-            self.fc0 = SpatialFC(dim)
-
-        if layer_norm_axis == 'spatial':
-                self.norm0 = LayerNormal(dim)
-        elif layer_norm_axis == 'temporal':
-                self.norm0 = LayerNormalV2(seq)
-        elif layer_norm_axis == 'all':
-                self.norm0 = nn.LayerNorm([dim, seq])
-        else:
-            self.norm0 = nn.Identity()
+        self.fc0 = TemporalFC(seq_in)
+        self.norm0 = LayerNormalV2(seq_in)
 
         self.reset_parameters()
 
@@ -94,14 +84,4 @@ class MLPBlock(nn.Module):
         x_ = self.fc0(x)
         x_ = self.norm0(x_)
         x = x + x_
-        return x
-
-
-class TransMLP(nn.Module):
-    def __init__(self, dim=54, seq=50, use_spatial_fc=False, num_layers=48, layer_norm_axis='spatial'):
-        super().__init__()
-        self.mlp = nn.Sequential(*[MLPBlock(dim, seq, use_spatial_fc, layer_norm_axis) for _ in range(num_layers)])
-
-    def forward(self, x):
-        x = self.mlp(x)
         return x
