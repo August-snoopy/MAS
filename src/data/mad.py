@@ -50,10 +50,10 @@ class MADataset(Dataset):
                        for file_name in os.listdir(file_dir)
                        if file_name.endswith('.npz')]
         # 创建一个切片，用于分割训练集和验证集
-        if self.train:
-            _file_names = _file_names[:int(len(_file_names) * 0.8)]
-        else:
-            _file_names = _file_names[int(len(_file_names) * 0.8):]
+        # if self.train is True:
+        #     _file_names = _file_names[:int(len(_file_names) * 0.8)]
+        # else:
+        #     _file_names = _file_names[int(len(_file_names) * 0.8):]
 
         for file_name in _file_names:
             info = np.load(file_name)

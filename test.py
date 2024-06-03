@@ -4,32 +4,17 @@ from scipy.spatial.transform import Rotation as R
 
 import numpy as np
 from tqdm import tqdm
-from config import config
-from model import siMLPe as Model
-from utils.misc import rotmat2xyz_torch, rotmat2euler_torch
-from datasets.amass_eval import AMASSEval
+
+from src.simlpe import SiMLPe, DCTM, IDCTM
+from src.data import MADataset
+from src.utils.misc import rotmat2xyz_torch, rotmat2euler_torch
 
 import torch
 from torch.utils.data import DataLoader
 
 results_keys = ['#2', '#4', '#8', '#10', '#14', '#18', '#22', '#25']
-
-
-def get_dct_matrix(N):
-    dct_m = np.eye(N)
-    for k in np.arange(N):
-        for i in np.arange(N):
-            w = np.sqrt(2 / N)
-            if k == 0:
-                w = np.sqrt(1 / N)
-            dct_m[k, i] = w * np.cos(np.pi * (i + 1 / 2) * k / N)
-    idct_m = np.linalg.inv(dct_m)
-    return dct_m, idct_m
-
-
-dct_m, idct_m = get_dct_matrix(config.motion.amass_input_length)
-dct_m = torch.tensor(dct_m).float().cuda().unsqueeze(0)
-idct_m = torch.tensor(idct_m).float().cuda().unsqueeze(0)
+input_length = 50
+target_length = 25
 
 
 def regress_pred(pbar, num_samples, m_p3d_h36):
@@ -41,7 +26,7 @@ def regress_pred(pbar, num_samples, m_p3d_h36):
         motion_input = motion_input.reshape(b, n, 18, 3)
         motion_input = motion_input.reshape(b, n, -1)
         outputs = []
-        step = config.motion.amass_target_length_train
+        step = 25
         if step == 25:
             num_step = 1
         else:
@@ -50,12 +35,12 @@ def regress_pred(pbar, num_samples, m_p3d_h36):
             with torch.no_grad():
                 if config.deriv_input:
                     motion_input_ = motion_input.clone()
-                    motion_input_ = torch.matmul(dct_m, motion_input_.cuda())
-                    motion_input_ = motion_input_[:, -config.motion.amass_input_length:]
+                    motion_input_ = torch.matmul(DCTM, motion_input_.cuda())
+                    motion_input_ = motion_input_[:, -input_length:]
                 else:
                     motion_input_ = motion_input.clone()
                 output = model(motion_input_)
-                output = torch.matmul(idct_m, output)[:, :step, :]
+                output = torch.matmul(IDCTM, output)[:, :step, :]
                 if config.deriv_output:
                     output = output + motion_input[:, -1:, :].repeat(1, step, 1)
 
@@ -79,16 +64,16 @@ def regress_pred(pbar, num_samples, m_p3d_h36):
 
 
 def test(model, dataloader):
-    m_p3d_h36 = np.zeros([config.motion.amass_target_length])
-    titles = np.array(range(config.motion.amass_target_length)) + 1
+    m_p3d_h36 = np.zeros([target_length])
+    titles = np.array(range(target_length)) + 1
     num_samples = 0
 
     pbar = tqdm(dataloader)
     m_p3d_h36 = regress_pred(pbar, num_samples, m_p3d_h36)
 
     ret = {}
-    for j in range(config.motion.amass_target_length):
-        ret["#{:d}".format(titles[j])] = [m_p3d_h36[j], m_p3d_h36[j]]
+    for j in range(target_length):
+        ret[f"#{titles[j]}"] = [m_p3d_h36[j], m_p3d_h36[j]]
     print([round(ret[key][0], 6) for key in results_keys])
 
 
@@ -98,15 +83,14 @@ if __name__ == "__main__":
     parser.add_argument('--model-pth', type=str, default=None, help='=encoder path')
     args = parser.parse_args()
 
-    model = Model(config)
+    model = SiMLPe()
 
     state_dict = torch.load(args.model_pth)
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     model.cuda()
 
-    config.motion.amass_target_length = config.motion.amass_target_length_eval
-    dataset = AMASSEval(config, 'test')
+    dataset = MADataset(root='./data', train=False)
 
     shuffle = False
     sampler = None

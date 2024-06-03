@@ -41,19 +41,19 @@ class LayerNormalV2(nn.Module):
 
 class SpatialFC(nn.Module):
     def __init__(self, dim=54):
-        """
-        Args:
-            dim: 隐藏层的维度,手动设置, 54
-        """
         super(SpatialFC, self).__init__()
         self.fc = nn.Linear(dim, dim)
+        self.scaling_factor = torch.rsqrt(torch.tensor(dim, dtype=torch.float32))
         self.arr0 = Rearrange('b n d -> b d n')  # [batch, num, dim] -> [batch, dim, num]
         self.arr1 = Rearrange('b d n -> b n d')  # [batch, dim, num] -> [batch, num, dim]
 
     def forward(self, x):
+        attn_scores = torch.matmul(x, x.transpose(-2, -1)) * self.scaling_factor
+        attn_weights = torch.softmax(attn_scores, dim=-1)
         x = self.arr0(x)
         x = self.fc(x)
         x = self.arr1(x)
+        x = x * attn_weights
         return x
 
 

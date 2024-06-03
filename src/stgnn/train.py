@@ -66,7 +66,7 @@ def train(model, train_loader, optimizer, scheduler, epoch):
             'epoch': epoch,
             'state_dict': model.state_dict(),
             'optimizer': optimizer.state_dict(),
-            'best_acc': best_acc
+            'best_loss': best_acc
         }
         torch.save(checkpoint, args.checkpoint)
         logging.info(f'Checkpoint saved to {args.checkpoint}')
@@ -109,7 +109,7 @@ best_acc = 0.0
 if os.path.exists(args.checkpoint):
     checkpoint = torch.load(args.checkpoint)
     start_epoch = checkpoint['epoch'] + 1
-    best_acc = checkpoint.get('best_acc', 0.0)
+    best_acc = checkpoint.get('best_loss', 0.0)
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     logger.info(f'Loaded checkpoint from {args.checkpoint}')
