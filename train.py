@@ -1,5 +1,5 @@
 from src.data import MADataset
-from src.simlpe import SiMLPe
+from src.simlpe import SiMLPe, DCTM, IDCTM
 
 import torch
 from torch.utils.data import DataLoader
@@ -22,7 +22,6 @@ def compute_loss(y_pred, y):
 # 加载数据集
 train_dataset = MADataset('./data', train=True)
 test_dataset = MADataset('./data', train=False)
-
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
@@ -34,16 +33,19 @@ model.to(device)
 
 # 优化器
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
-
 # 训练和验证循环
-num_epochs = 1024
+num_epochs = 1000
 for epoch in range(num_epochs):
     model.train()
     train_loss = 0.0
     for x, y in train_loader:
         x, y = x.to(device), y.to(device)
+        dctm = DCTM.expand(x.shape[0], -1, -1).to(device)
+        idctm = IDCTM.expand(y.shape[0], -1, -1).to(device)
+        x = torch.bmm(dctm, x)
         optimizer.zero_grad()
         y_pred = model(x)
+        y_pred = torch.bmm(idctm, y_pred)
         loss = compute_loss(y_pred, y)
         loss.backward()
         optimizer.step()
@@ -56,10 +58,14 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for x, y in test_loader:
             x, y = x.to(device), y.to(device)
+            dctm = DCTM.expand(x.shape[0], -1, -1).to(device)
+            idctm = IDCTM.expand(y.shape[0], -1, -1).to(device)
+            x = torch.bmm(dctm, x)
             y_pred = model(x)
+            y_pred = torch.bmm(idctm, y_pred)
             loss = compute_loss(y_pred, y)
             val_loss += loss.item()
 
     val_loss /= len(test_loader)
     if (epoch + 1) % 10 == 0:
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss*1000:.4f}, Val Loss: {val_loss*1000:.4f}")

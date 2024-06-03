@@ -26,7 +26,7 @@ def get_dct_matrix(T):
     return dct_matrix, idct_matrix
 
 
-dct_m, idct_m = get_dct_matrix(50)
-dct_m = torch.tensor(dct_m).float().cuda().unsqueeze(0)
-idct_m = torch.tensor(idct_m).float().cuda().unsqueeze(0)
-print(dct_m.shape)
+DCTM, _ = get_dct_matrix(50)
+_, IDCTM = get_dct_matrix(25)
+DCTM = torch.tensor(DCTM).float().unsqueeze(0)
+IDCTM = torch.tensor(IDCTM).float().unsqueeze(0)
