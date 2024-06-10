@@ -40,20 +40,17 @@ class LayerNormalV2(nn.Module):
 
 
 class SpatialFC(nn.Module):
-    def __init__(self, dim=54):
+    def __init__(self, dim):
         super(SpatialFC, self).__init__()
         self.fc = nn.Linear(dim, dim)
-        self.scaling_factor = torch.rsqrt(torch.tensor(dim, dtype=torch.float32))
-        self.arr0 = Rearrange('b n d -> b d n')  # [batch, num, dim] -> [batch, dim, num]
-        self.arr1 = Rearrange('b d n -> b n d')  # [batch, dim, num] -> [batch, num, dim]
+        self.norm = nn.LayerNorm(dim)
 
     def forward(self, x):
-        attn_scores = torch.matmul(x, x.transpose(-2, -1)) * self.scaling_factor
-        attn_weights = torch.softmax(attn_scores, dim=-1)
-        x = self.arr0(x)
+        # 定义残差链接
+        residual = x
         x = self.fc(x)
-        x = self.arr1(x)
-        x = x * attn_weights
+        x = self.norm(x)
+        x = x + residual
         return x
 
 
@@ -61,6 +58,7 @@ class TemporalFC(nn.Module):
     def __init__(self, seq):
         super(TemporalFC, self).__init__()
         self.fc = nn.Linear(seq, seq)
+        self.norm = LayerNormal(seq)
 
     def forward(self, x):
         x = self.fc(x)
@@ -84,4 +82,5 @@ class MLPBlock(nn.Module):
         x_ = self.fc0(x)
         x_ = self.norm0(x_)
         x = x + x_
+        x = torch.relu(x)
         return x
