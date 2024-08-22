@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 from tqdm import tqdm
 
-from src.simlpe import SiMLPe, DCTM, IDCTM
+from src.aceMLP import SiMLPe, DCTM, IDCTM
 from src.data import MADataset
 from src.utils.misc import rotmat2xyz_torch, rotmat2euler_torch
 

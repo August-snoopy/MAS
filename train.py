@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from src.data import MADataset
-from src.simlpe import SiMLPe, DCTM, IDCTM
+from src.aceMLP import SiMLPe, DCTM, IDCTM
 
 # 使用数据集
 dataset = MADataset(root='./data', train=True)

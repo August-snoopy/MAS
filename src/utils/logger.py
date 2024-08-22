@@ -4,6 +4,7 @@ import os
 
 def print_and_log_info(logger, string):
     logger.info(string)
+    print(string)
 
 
 def get_logger(file_path, name='train'):
